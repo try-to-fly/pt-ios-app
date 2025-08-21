@@ -8,7 +8,7 @@ struct TorrentCardView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(torrent.name)
+                    Text(torrent.displayTitle)
                         .font(.system(size: 15, weight: .semibold))
                         .lineLimit(2)
                         .foregroundColor(.primary)

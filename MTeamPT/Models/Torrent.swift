@@ -125,6 +125,15 @@ struct Torrent: Identifiable, Codable, Hashable {
     var hasDiscount: Bool {
         discountType != .none
     }
+    
+    var displayTitle: String {
+        if let smallDescr = smallDescr, !smallDescr.isEmpty {
+            let components = smallDescr.components(separatedBy: " | ")
+            let firstComponent = components.first?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return firstComponent.isEmpty ? name : firstComponent
+        }
+        return name
+    }
 }
 
 struct TorrentStatus: Codable, Hashable {
