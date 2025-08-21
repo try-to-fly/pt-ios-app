@@ -149,18 +149,35 @@ struct TorrentDetailView: View {
                 .font(.headline)
                 .foregroundColor(.primary)
             
-            FlowLayout(spacing: 8) {
-                ForEach(viewModel.formattedLabels, id: \.0) { label, color in
-                    Text(label)
-                        .font(.caption)
-                        .fontWeight(.medium)
-                        .foregroundColor(color)
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 6)
-                        .background(
-                            Capsule()
-                                .fill(color.opacity(0.15))
-                        )
+            if #available(iOS 16.0, *) {
+                FlowLayout(spacing: 8) {
+                    ForEach(viewModel.formattedLabels, id: \.0) { label, color in
+                        Text(label)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(color)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(color.opacity(0.15))
+                            )
+                    }
+                }
+            } else {
+                LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))], spacing: 8) {
+                    ForEach(viewModel.formattedLabels, id: \.0) { label, color in
+                        Text(label)
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(color)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .background(
+                                Capsule()
+                                    .fill(color.opacity(0.15))
+                            )
+                    }
                 }
             }
         }
@@ -350,6 +367,7 @@ struct Download3DButtonStyle: ButtonStyle {
     }
 }
 
+@available(iOS 16.0, *)
 struct FlowLayout: Layout {
     var spacing: CGFloat = 8
     

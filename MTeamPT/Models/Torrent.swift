@@ -57,7 +57,7 @@ struct Torrent: Identifiable, Codable, Hashable {
     
     var healthStatus: HealthStatus {
         guard let seeders = Int(status.seeders),
-              let leechers = Int(status.leechers) else {
+              let _ = Int(status.leechers) else {
             return .unknown
         }
         

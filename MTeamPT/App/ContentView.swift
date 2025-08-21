@@ -122,24 +122,16 @@ struct OnboardingView: View {
         isLoading = true
         
         Task {
-            do {
-                let isValid = await APIService.shared.validateAPIKey(apiKey)
-                
-                await MainActor.run {
-                    if isValid {
-                        appState.saveAPIKey(apiKey)
-                    } else {
-                        errorMessage = "API 密钥无效，请检查后重试"
-                        showError = true
-                    }
-                    isLoading = false
-                }
-            } catch {
-                await MainActor.run {
-                    errorMessage = "网络连接失败，请检查网络设置"
+            let isValid = await APIService.shared.validateAPIKey(apiKey)
+            
+            await MainActor.run {
+                if isValid {
+                    appState.saveAPIKey(apiKey)
+                } else {
+                    errorMessage = "API 密钥无效，请检查后重试"
                     showError = true
-                    isLoading = false
                 }
+                isLoading = false
             }
         }
     }

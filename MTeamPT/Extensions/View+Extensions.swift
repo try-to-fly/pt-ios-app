@@ -81,9 +81,9 @@ struct ShimmerModifier: ViewModifier {
                     startPoint: .leading,
                     endPoint: .trailing
                 )
-                .rotationEffect(.degrees(70))
-                .offset(x: phase * 300 - 150)
             )
+            .rotationEffect(.degrees(70))
+            .offset(x: phase * 300 - 150)
             .mask(
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.black)
@@ -168,7 +168,9 @@ struct DeviceRotationViewModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
-            .onAppear()
+            .onAppear {
+                action(UIDevice.current.orientation)
+            }
             .onReceive(NotificationCenter.default.publisher(for: UIDevice.orientationDidChangeNotification)) { _ in
                 action(UIDevice.current.orientation)
             }

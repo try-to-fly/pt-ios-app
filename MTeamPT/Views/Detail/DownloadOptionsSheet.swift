@@ -57,7 +57,7 @@ struct DownloadOptionsSheet: View {
                 Button("完成") {
                     dismiss()
                 }
-                .fontWeight(.medium)
+                .font(.system(size: 17, weight: .medium))
             }
             .padding(.horizontal)
             
@@ -173,7 +173,7 @@ struct DownloadOptionsSheet: View {
                 .foregroundColor(.primary)
             
             VStack(alignment: .leading, spacing: 8) {
-                TipRow(icon: "1.circle.fill", text: "点击"在外部应用中打开"将自动调用系统下载器")
+                TipRow(icon: "1.circle.fill", text: "点击\"在外部应用中打开\"将自动调用系统下载器")
                 TipRow(icon: "2.circle.fill", text: "复制链接后可在其他下载工具中使用")
                 TipRow(icon: "3.circle.fill", text: "建议使用支持 BT 协议的下载工具")
             }
