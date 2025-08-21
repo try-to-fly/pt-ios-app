@@ -1,0 +1,159 @@
+import Foundation
+import Combine
+import SwiftUI
+
+@MainActor
+class SearchViewModel: ObservableObject {
+    @Published var searchText = ""
+    @Published var selectedCategory: TorrentCategory = .all
+    @Published var torrents: [Torrent] = []
+    @Published var isLoading = false
+    @Published var isLoadingMore = false
+    @Published var errorMessage: String?
+    @Published var showError = false
+    @Published var hasMorePages = false
+    
+    private var currentPage = 1
+    private let pageSize = 20
+    private var searchTask: Task<Void, Never>?
+    private var cancellables = Set<AnyCancellable>()
+    private let apiService = APIService.shared
+    private let cacheManager = CacheManager.shared
+    
+    var isEmpty: Bool {
+        !isLoading && torrents.isEmpty && !searchText.isEmpty
+    }
+    
+    var searchPlaceholder: String {
+        "搜索\(selectedCategory.displayName)..."
+    }
+    
+    init() {
+        setupSearchDebounce()
+    }
+    
+    private func setupSearchDebounce() {
+        $searchText
+            .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
+            .removeDuplicates()
+            .sink { [weak self] searchText in
+                if !searchText.isEmpty {
+                    self?.search()
+                } else {
+                    self?.clearResults()
+                }
+            }
+            .store(in: &cancellables)
+        
+        $selectedCategory
+            .sink { [weak self] _ in
+                self?.search()
+            }
+            .store(in: &cancellables)
+    }
+    
+    func search() {
+        searchTask?.cancel()
+        
+        guard !searchText.isEmpty else {
+            clearResults()
+            return
+        }
+        
+        currentPage = 1
+        isLoading = true
+        errorMessage = nil
+        
+        let params = SearchParams(
+            keyword: searchText,
+            category: selectedCategory,
+            pageNumber: currentPage,
+            pageSize: pageSize
+        )
+        
+        if let cached = cacheManager.getSearchResult(for: params) {
+            self.torrents = cached.torrents
+            self.hasMorePages = cached.hasMore
+            self.isLoading = false
+            return
+        }
+        
+        searchTask = Task {
+            do {
+                let result = try await apiService.searchTorrents(params: params)
+                
+                if !Task.isCancelled {
+                    self.torrents = result.torrents
+                    self.hasMorePages = result.hasMore
+                    cacheManager.cacheSearchResult(result, for: params)
+                }
+            } catch {
+                if !Task.isCancelled {
+                    self.handleError(error)
+                }
+            }
+            
+            self.isLoading = false
+        }
+    }
+    
+    func loadMore() {
+        guard !isLoadingMore && hasMorePages && !searchText.isEmpty else { return }
+        
+        isLoadingMore = true
+        currentPage += 1
+        
+        let params = SearchParams(
+            keyword: searchText,
+            category: selectedCategory,
+            pageNumber: currentPage,
+            pageSize: pageSize
+        )
+        
+        Task {
+            do {
+                let result = try await apiService.searchTorrents(params: params)
+                
+                if !Task.isCancelled {
+                    self.torrents.append(contentsOf: result.torrents)
+                    self.hasMorePages = result.hasMore
+                    cacheManager.cacheSearchResult(result, for: params)
+                }
+            } catch {
+                self.currentPage -= 1
+                self.handleError(error)
+            }
+            
+            self.isLoadingMore = false
+        }
+    }
+    
+    func refresh() {
+        cacheManager.clearCache()
+        search()
+    }
+    
+    func clearResults() {
+        torrents = []
+        currentPage = 1
+        hasMorePages = false
+        errorMessage = nil
+    }
+    
+    private func handleError(_ error: Error) {
+        if let searchError = error as? SearchError {
+            errorMessage = searchError.localizedDescription
+        } else {
+            errorMessage = "发生未知错误，请重试"
+        }
+        showError = true
+    }
+    
+    func torrentAppeared(_ torrent: Torrent) {
+        guard let index = torrents.firstIndex(where: { $0.id == torrent.id }) else { return }
+        
+        if index >= torrents.count - 3 {
+            loadMore()
+        }
+    }
+}
