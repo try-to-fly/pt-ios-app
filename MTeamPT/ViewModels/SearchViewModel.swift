@@ -33,23 +33,17 @@ class SearchViewModel: ObservableObject {
     }
     
     private func setupSearchDebounce() {
-        $searchText
-            .debounce(for: .milliseconds(500), scheduler: RunLoop.main)
-            .removeDuplicates()
-            .sink { [weak self] searchText in
-                if !searchText.isEmpty {
+        $selectedCategory
+            .sink { [weak self] _ in
+                if !self?.searchText.isEmpty ?? true {
                     self?.search()
-                } else {
-                    self?.clearResults()
                 }
             }
             .store(in: &cancellables)
-        
-        $selectedCategory
-            .sink { [weak self] _ in
-                self?.search()
-            }
-            .store(in: &cancellables)
+    }
+    
+    func performSearch() {
+        search()
     }
     
     func search() {

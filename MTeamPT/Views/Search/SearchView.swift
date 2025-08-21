@@ -71,7 +71,9 @@ struct SearchView: View {
             .padding(.horizontal)
             .padding(.top, 50)
             
-            SearchBarView(text: $viewModel.searchText, placeholder: viewModel.searchPlaceholder)
+            SearchBarView(text: $viewModel.searchText, placeholder: viewModel.searchPlaceholder) {
+                viewModel.performSearch()
+            }
                 .padding(.horizontal)
             
             CategorySelectorView(selectedCategory: $viewModel.selectedCategory)
@@ -146,6 +148,7 @@ struct SearchView: View {
 struct SearchBarView: View {
     @Binding var text: String
     let placeholder: String
+    let onSearchSubmit: () -> Void
     @FocusState private var isFocused: Bool
     
     var body: some View {
@@ -156,6 +159,10 @@ struct SearchBarView: View {
             TextField(placeholder, text: $text)
                 .focused($isFocused)
                 .textFieldStyle(PlainTextFieldStyle())
+                .onSubmit {
+                    onSearchSubmit()
+                    isFocused = false
+                }
             
             if !text.isEmpty {
                 Button(action: { 
