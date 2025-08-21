@@ -65,6 +65,48 @@ class DownloadManager: NSObject, ObservableObject {
         downloadTask.resume()
     }
     
+    /// 修复 Mojibake（文字化け）问题
+    /// 当 UTF-8 编码的文本被错误地解释为 ISO-8859-1 时会产生乱码
+    /// 例如："哪吒" 会变成 "åªå"
+    private func fixMojibake(_ text: String) -> String {
+        // 将字符串作为 ISO-8859-1 字节重新解释为 UTF-8
+        var bytes = [UInt8]()
+        for scalar in text.unicodeScalars {
+            if scalar.value <= 0xFF {
+                bytes.append(UInt8(scalar.value))
+            } else {
+                // 如果字符超出单字节范围，说明不是 Mojibake，返回原文本
+                return text
+            }
+        }
+        
+        // 尝试将字节数组解释为 UTF-8
+        if let fixed = String(bytes: bytes, encoding: .utf8) {
+            // 简单验证：检查是否包含中文字符
+            let chineseCharacterRange = NSRange(location: 0x4E00, length: 0x9FFF - 0x4E00)
+            var containsChinese = false
+            for scalar in fixed.unicodeScalars {
+                if NSLocationInRange(Int(scalar.value), chineseCharacterRange) {
+                    containsChinese = true
+                    break
+                }
+            }
+            
+            if containsChinese {
+                return fixed
+            }
+            
+            // 即使不包含中文，如果修复后的文本没有控制字符，也使用修复后的
+            let controlCharPattern = "[\u{0000}-\u{001F}\u{007F}]"
+            if fixed.range(of: controlCharPattern, options: .regularExpression) == nil {
+                return fixed
+            }
+        }
+        
+        // 如果修复失败，返回原文本
+        return text
+    }
+
     private func extractFileName(from response: URLResponse, fallbackName: String = "torrent") -> String {
         // 首先尝试从 Content-Disposition 响应头获取文件名
         if let httpResponse = response as? HTTPURLResponse,
@@ -84,8 +126,17 @@ class DownloadManager: NSObject, ObservableObject {
                     filename = String(filename[..<semicolonRange.lowerBound])
                 }
                 
+                // 尝试修复 Mojibake（文字化け）问题
+                // 当 UTF-8 文本被错误地解释为 ISO-8859-1 时会出现这种乱码
+                filename = fixMojibake(filename)
+                
+                // 对文件名进行 URL 解码，处理中文等特殊字符
+                if let decodedFilename = filename.removingPercentEncoding {
+                    filename = decodedFilename
+                }
+                
                 if !filename.isEmpty {
-                    print("[DownloadManager] 从 Content-Disposition 获取文件名: \(filename)")
+                    print("[APIService] 从 Content-Disposition 获取文件名: \(filename)")
                     return filename
                 }
             }

@@ -85,6 +85,11 @@ class DownloadManager: NSObject {
                     filename = String(filename[..<semicolonRange.lowerBound])
                 }
                 
+                // 对文件名进行 URL 解码，处理中文等特殊字符
+                if let decodedFilename = filename.removingPercentEncoding {
+                    filename = decodedFilename
+                }
+                
                 if !filename.isEmpty {
                     print("[DownloadManager] 从 Content-Disposition 获取文件名: \(filename)")
                     return filename

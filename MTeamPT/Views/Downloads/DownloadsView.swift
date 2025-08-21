@@ -78,14 +78,14 @@ struct DownloadsView: View {
             ForEach(viewModel.downloads, id: \.id) { download in
                 DownloadRowView(
                     download: download,
-                    onTap: { download in
+                    onTap: { _ in
                         // 点击直接打开分享面板
                         viewModel.openSharePanel(for: download)
                     },
-                    onShare: { download in
+                    onShare: { _ in
                         viewModel.openSharePanel(for: download)
                     },
-                    onDelete: { download in
+                    onDelete: { _ in
                         viewModel.requestDelete(download)
                     }
                 )
