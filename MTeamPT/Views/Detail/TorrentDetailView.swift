@@ -60,14 +60,6 @@ struct TorrentDetailView: View {
             } message: {
                 Text(viewModel.errorMessage ?? "未知错误")
             }
-            .sheet(isPresented: $viewModel.showDownloadOptions) {
-                DownloadOptionsSheet(
-                    downloadURL: viewModel.downloadURL ?? "",
-                    torrentName: torrent.name,
-                    onCopyLink: viewModel.copyDownloadLink,
-                    onOpenExternal: viewModel.openInExternalApp
-                )
-            }
             .sheet(isPresented: $showingShareSheet) {
                 ShareSheet(items: shareItems)
             }
@@ -225,16 +217,31 @@ struct TorrentDetailView: View {
             Button(action: {
                 viewModel.getDownloadLink()
             }) {
-                if viewModel.isLoadingDownload {
-                    ProgressView()
-                        .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 50)
+                if viewModel.isLoadingDownload && !viewModel.isDownloading {
+                    HStack {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(0.8)
+                        Text("正在准备...")
+                            .fontWeight(.semibold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
+                } else if viewModel.isDownloading {
+                    HStack {
+                        ProgressView()
+                            .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                            .scaleEffect(0.8)
+                        Text("正在下载...")
+                            .fontWeight(.semibold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 50)
                 } else {
                     HStack {
                         Image(systemName: "arrow.down.circle.fill")
                             .font(.title3)
-                        Text("获取下载链接")
+                        Text("下载种子")
                             .fontWeight(.semibold)
                     }
                     .frame(maxWidth: .infinity)
@@ -242,9 +249,9 @@ struct TorrentDetailView: View {
                 }
             }
             .buttonStyle(Download3DButtonStyle())
-            .disabled(viewModel.isLoadingDownload)
+            .disabled(viewModel.isLoadingDownload || viewModel.isDownloading)
             
-            Text("点击后将生成种子下载链接")
+            Text("点击后将下载种子文件并打开分享面板")
                 .font(.caption)
                 .foregroundColor(.secondary)
         }

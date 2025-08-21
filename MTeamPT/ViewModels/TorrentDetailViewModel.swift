@@ -11,8 +11,11 @@ class TorrentDetailViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var showError = false
     @Published var isFavorite = false
+    @Published var isDownloading = false
+    @Published var downloadedFile: DownloadedTorrent?
     
     private let apiService = APIService.shared
+    private let downloadManager = DownloadManager.shared
     
     init(torrent: Torrent) {
         self.torrent = torrent
@@ -64,15 +67,53 @@ class TorrentDetailViewModel: ObservableObject {
             do {
                 let url = try await apiService.getTorrentDownloadURL(torrentId: torrent.id)
                 self.downloadURL = url
-                self.showDownloadOptions = true
                 
                 saveToHistory()
                 
+                // 直接开始下载种子文件
+                await MainActor.run {
+                    self.downloadTorrentFile()
+                }
+                
             } catch {
                 self.handleError(error)
+                self.isLoadingDownload = false
             }
-            
-            self.isLoadingDownload = false
+        }
+    }
+    
+    func downloadTorrentFile() {
+        guard let urlString = downloadURL else { 
+            errorMessage = "下载链接无效"
+            showError = true
+            isLoadingDownload = false
+            return 
+        }
+        
+        isDownloading = true
+        errorMessage = nil
+        
+        downloadManager.downloadTorrentFile(
+            from: urlString,
+            torrentName: torrent.name,
+            torrentId: torrent.id
+        ) { [weak self] result in
+            DispatchQueue.main.async {
+                self?.isDownloading = false
+                self?.isLoadingDownload = false
+                
+                switch result {
+                case .success(let downloadedTorrent):
+                    self?.downloadedFile = downloadedTorrent
+                    HapticManager.shared.notification(.success)
+                    
+                    // 下载完成后自动打开分享面板
+                    self?.openSharePanel(for: downloadedTorrent)
+                    
+                case .failure(let error):
+                    self?.handleError(error)
+                }
+            }
         }
     }
     
@@ -81,6 +122,36 @@ class TorrentDetailViewModel: ObservableObject {
               let url = URL(string: urlString) else { return }
         
         UIApplication.shared.open(url)
+    }
+    
+    func openDownloadedFile() {
+        guard let downloadedFile = downloadedFile else { return }
+        openSharePanel(for: downloadedFile)
+    }
+    
+    func openSharePanel(for downloadedFile: DownloadedTorrent) {
+        let activityVC = UIActivityViewController(
+            activityItems: [downloadedFile.localURL],
+            applicationActivities: nil
+        )
+        
+        // 获取当前最顶层的 view controller
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first,
+           let rootVC = window.rootViewController {
+            
+            var topVC = rootVC
+            while let presentedVC = topVC.presentedViewController {
+                topVC = presentedVC
+            }
+            
+            if let popover = activityVC.popoverPresentationController {
+                popover.sourceView = topVC.view
+                popover.sourceRect = CGRect(x: topVC.view.bounds.midX, y: topVC.view.bounds.midY, width: 0, height: 0)
+            }
+            
+            topVC.present(activityVC, animated: true)
+        }
     }
     
     func copyDownloadLink() {
