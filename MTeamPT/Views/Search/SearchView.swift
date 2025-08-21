@@ -71,9 +71,16 @@ struct SearchView: View {
             .padding(.horizontal)
             .padding(.top, 50)
             
-            SearchBarView(text: $viewModel.searchText, placeholder: viewModel.searchPlaceholder) {
-                viewModel.performSearch()
-            }
+            SearchBarView(
+                text: $viewModel.searchText, 
+                placeholder: viewModel.searchPlaceholder, 
+                onSearchSubmit: {
+                    viewModel.performSearch()
+                },
+                onClear: {
+                    viewModel.clearResults()
+                }
+            )
                 .padding(.horizontal)
             
             CategorySelectorView(selectedCategory: $viewModel.selectedCategory)
@@ -149,7 +156,15 @@ struct SearchBarView: View {
     @Binding var text: String
     let placeholder: String
     let onSearchSubmit: () -> Void
+    let onClear: (() -> Void)?
     @FocusState private var isFocused: Bool
+    
+    init(text: Binding<String>, placeholder: String, onSearchSubmit: @escaping () -> Void, onClear: (() -> Void)? = nil) {
+        self._text = text
+        self.placeholder = placeholder
+        self.onSearchSubmit = onSearchSubmit
+        self.onClear = onClear
+    }
     
     var body: some View {
         HStack {
@@ -168,6 +183,7 @@ struct SearchBarView: View {
                 Button(action: { 
                     text = ""
                     isFocused = false
+                    onClear?()
                 }) {
                     Image(systemName: "xmark.circle.fill")
                         .foregroundColor(.secondary)

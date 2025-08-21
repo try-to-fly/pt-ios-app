@@ -35,7 +35,7 @@ class SearchViewModel: ObservableObject {
     private func setupSearchDebounce() {
         $selectedCategory
             .sink { [weak self] _ in
-                if !self?.searchText.isEmpty ?? true {
+                if !(self?.searchText.isEmpty ?? true) {
                     self?.search()
                 }
             }
