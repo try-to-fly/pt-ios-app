@@ -31,7 +31,7 @@ struct Torrent: Identifiable, Codable, Hashable {
     let status: TorrentStatus
     let dmmInfo: String?
     let editedBy: String?
-    let editDate: String
+    let editDate: String?
     let collection: Bool
     let inRss: Bool
     let canVote: Bool

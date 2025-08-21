@@ -43,8 +43,12 @@ class AppState: ObservableObject {
     }
     
     func saveAPIKey(_ key: String) {
-        KeychainManager.shared.saveAPIKey(key)
-        apiKey = key
+        // 清理密钥格式
+        let cleanedKey = key.trimmingCharacters(in: .whitespacesAndNewlines)
+            .replacingOccurrences(of: "\\\\s+", with: "", options: .regularExpression)
+        
+        KeychainManager.shared.saveAPIKey(cleanedKey)
+        apiKey = cleanedKey
         isAuthenticated = true
         showOnboarding = false
     }

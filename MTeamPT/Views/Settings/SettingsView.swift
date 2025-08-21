@@ -264,6 +264,18 @@ struct APIKeyEditorView: View {
                         .font(.body)
                         .foregroundColor(.secondary)
                     
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("提示：")
+                            .font(.caption)
+                            .fontWeight(.medium)
+                            .foregroundColor(.blue)
+                        
+                        Text("• API 密钥应为 32 位以上的字符串\n• 请确保复制完整的密钥，避免多余的空格\n• 如果仍然无效，请检查账户状态或联系管理员")
+                            .font(.caption)
+                            .foregroundColor(.secondary)
+                    }
+                    .padding(.top, 8)
+                    
                     VStack(alignment: .leading, spacing: 8) {
                         Text("API 密钥")
                             .font(.caption)
@@ -314,14 +326,14 @@ struct APIKeyEditorView: View {
         isValidating = true
         
         Task {
-            let isValid = await APIService.shared.validateAPIKey(newAPIKey)
+            let result = await APIService.shared.validateAPIKey(newAPIKey)
             
             await MainActor.run {
-                if isValid {
+                if result.isValid {
                     appState.saveAPIKey(newAPIKey)
                     dismiss()
                 } else {
-                    errorMessage = "API 密钥无效，请检查后重试"
+                    errorMessage = result.errorMessage ?? "API 密钥验证失败"
                     showError = true
                 }
                 isValidating = false

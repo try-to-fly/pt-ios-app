@@ -122,13 +122,13 @@ struct OnboardingView: View {
         isLoading = true
         
         Task {
-            let isValid = await APIService.shared.validateAPIKey(apiKey)
+            let result = await APIService.shared.validateAPIKey(apiKey)
             
             await MainActor.run {
-                if isValid {
+                if result.isValid {
                     appState.saveAPIKey(apiKey)
                 } else {
-                    errorMessage = "API 密钥无效，请检查后重试"
+                    errorMessage = result.errorMessage ?? "API 密钥验证失败"
                     showError = true
                 }
                 isLoading = false

@@ -35,19 +35,44 @@ class APIService {
         let encoder = JSONEncoder()
         request.httpBody = try encoder.encode(params)
         
+        // 添加请求体日志
+        if let requestBody = request.httpBody,
+           let requestString = String(data: requestBody, encoding: .utf8) {
+            print("[APIService] 请求体: \(requestString)")
+        }
+        
         do {
+            print("[APIService] 发送搜索请求到: \(url)")
+            print("[APIService] API Key: \(String(apiKey.prefix(8)))...")
+            
             let (data, response) = try await session.data(for: request)
             
             guard let httpResponse = response as? HTTPURLResponse else {
-                throw SearchError.networkError("Invalid response")
+                print("[APIService] 无效的响应格式")
+                throw SearchError.networkError("无效的响应格式")
             }
             
+            print("[APIService] HTTP 状态码: \(httpResponse.statusCode)")
+            
             if httpResponse.statusCode == 401 {
+                print("[APIService] API 密钥认证失败")
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("[APIService] 响应内容: \(responseString)")
+                }
                 throw SearchError.invalidAPIKey
             }
             
             guard httpResponse.statusCode == 200 else {
-                throw SearchError.networkError("HTTP \(httpResponse.statusCode)")
+                let errorMsg = "HTTP \(httpResponse.statusCode)"
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("[APIService] 错误响应: \(responseString)")
+                }
+                throw SearchError.networkError(errorMsg)
+            }
+            
+            // 添加响应体日志
+            if let responseString = String(data: data, encoding: .utf8) {
+                print("[APIService] 响应体: \(responseString)")
             }
             
             let decoder = JSONDecoder()
@@ -64,9 +89,12 @@ class APIService {
             return SearchResult(from: pageData)
             
         } catch let error as SearchError {
+            print("[APIService] 搜索错误: \(error.localizedDescription)")
             throw error
         } catch {
+            print("[APIService] 未预期错误: \(error)")
             if error is DecodingError {
+                print("[APIService] JSON 解析失败")
                 throw SearchError.decodingError
             }
             throw SearchError.networkError(error.localizedDescription)
@@ -88,18 +116,32 @@ class APIService {
         request.httpBody = bodyString.data(using: .utf8)
         
         do {
+            print("[APIService] 发送下载链接请求到: \(url)")
+            print("[APIService] API Key: \(String(apiKey.prefix(8)))...")
+            
             let (data, response) = try await session.data(for: request)
             
             guard let httpResponse = response as? HTTPURLResponse else {
-                throw SearchError.networkError("Invalid response")
+                print("[APIService] 无效的响应格式")
+                throw SearchError.networkError("无效的响应格式")
             }
             
+            print("[APIService] HTTP 状态码: \(httpResponse.statusCode)")
+            
             if httpResponse.statusCode == 401 {
+                print("[APIService] API 密钥认证失败")
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("[APIService] 响应内容: \(responseString)")
+                }
                 throw SearchError.invalidAPIKey
             }
             
             guard httpResponse.statusCode == 200 else {
-                throw SearchError.networkError("HTTP \(httpResponse.statusCode)")
+                let errorMsg = "HTTP \(httpResponse.statusCode)"
+                if let responseString = String(data: data, encoding: .utf8) {
+                    print("[APIService] 错误响应: \(responseString)")
+                }
+                throw SearchError.networkError(errorMsg)
             }
             
             let decoder = JSONDecoder()
@@ -116,31 +158,82 @@ class APIService {
             return downloadURL
             
         } catch let error as SearchError {
+            print("[APIService] 下载链接获取错误: \(error.localizedDescription)")
             throw error
         } catch {
+            print("[APIService] 下载链接未预期错误: \(error)")
             if error is DecodingError {
+                print("[APIService] JSON 解析失败")
                 throw SearchError.decodingError
             }
             throw SearchError.networkError(error.localizedDescription)
         }
     }
     
-    func validateAPIKey(_ key: String) async -> Bool {
+    func validateAPIKey(_ key: String) async -> (isValid: Bool, errorMessage: String?) {
+        // 保存当前密钥作为备份
         let tempKey = apiKey
-        KeychainManager.shared.saveAPIKey(key)
+        
+        // 清理并验证密钥格式
+        let cleanedKey = cleanAPIKey(key)
+        guard !cleanedKey.isEmpty else {
+            return (false, "API 密钥不能为空")
+        }
+        
+        guard cleanedKey.count >= 32 else {
+            return (false, "API 密钥格式错误，长度不足")
+        }
+        
+        // 临时保存新密钥进行验证
+        KeychainManager.shared.saveAPIKey(cleanedKey)
         
         do {
             let params = SearchParams(keyword: "test", pageSize: 1)
             _ = try await searchTorrents(params: params)
-            return true
-        } catch {
-            if tempKey != nil {
-                KeychainManager.shared.saveAPIKey(tempKey!)
+            return (true, nil)
+        } catch let error as SearchError {
+            // 恢复原密钥
+            if let tempKey = tempKey {
+                KeychainManager.shared.saveAPIKey(tempKey)
             } else {
                 KeychainManager.shared.deleteAPIKey()
             }
-            return false
+            
+            let errorMessage: String
+            switch error {
+            case .invalidAPIKey:
+                errorMessage = "API 密钥无效或已过期"
+            case .networkError(let message):
+                errorMessage = "网络连接失败: \(message)"
+            case .apiError(let message):
+                errorMessage = "服务器错误: \(message)"
+            case .decodingError:
+                errorMessage = "服务器响应格式错误"
+            case .unknown:
+                errorMessage = "未知错误"
+            }
+            
+            print("[APIService] API 密钥验证失败: \(errorMessage)")
+            return (false, errorMessage)
+        } catch {
+            // 恢复原密钥
+            if let tempKey = tempKey {
+                KeychainManager.shared.saveAPIKey(tempKey)
+            } else {
+                KeychainManager.shared.deleteAPIKey()
+            }
+            
+            let errorMessage = "验证失败: \(error.localizedDescription)"
+            print("[APIService] API 密钥验证出现异常: \(errorMessage)")
+            return (false, errorMessage)
         }
+    }
+    
+    private func cleanAPIKey(_ key: String) -> String {
+        // 移除首尾空格和换行符
+        let trimmed = key.trimmingCharacters(in: .whitespacesAndNewlines)
+        // 移除中间的空格和换行符
+        return trimmed.replacingOccurrences(of: "\\\\s+", with: "", options: .regularExpression)
     }
     
     func downloadImage(from urlString: String) async throws -> Data {
