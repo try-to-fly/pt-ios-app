@@ -191,36 +191,18 @@ enum DiscountType: String {
 }
 
 enum TorrentCategory: String, CaseIterable {
-    case all = ""
+    case all = "normal"
+    case tvshow = "tvshow"
     case movie = "movie"
-    case tvSeries = "tv"
-    case music = "music"
-    case game = "game"
-    case animation = "animation"
-    case software = "software"
-    case ebook = "ebook"
-    case other = "other"
     
     var displayName: String {
         switch self {
         case .all:
             return "全部"
+        case .tvshow:
+            return "电视"
         case .movie:
             return "电影"
-        case .tvSeries:
-            return "电视剧"
-        case .music:
-            return "音乐"
-        case .game:
-            return "游戏"
-        case .animation:
-            return "动画"
-        case .software:
-            return "软件"
-        case .ebook:
-            return "电子书"
-        case .other:
-            return "其他"
         }
     }
     
@@ -228,22 +210,10 @@ enum TorrentCategory: String, CaseIterable {
         switch self {
         case .all:
             return "square.grid.2x2"
+        case .tvshow:
+            return "tv"
         case .movie:
             return "film"
-        case .tvSeries:
-            return "tv"
-        case .music:
-            return "music.note"
-        case .game:
-            return "gamecontroller"
-        case .animation:
-            return "sparkles.tv"
-        case .software:
-            return "app.badge"
-        case .ebook:
-            return "book"
-        case .other:
-            return "ellipsis.circle"
         }
     }
 }

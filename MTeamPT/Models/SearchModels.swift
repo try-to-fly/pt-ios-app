@@ -9,7 +9,7 @@ struct SearchParams: Codable {
     let pageSize: Int
     
     init(keyword: String, category: TorrentCategory = .all, pageNumber: Int = 1, pageSize: Int = 20) {
-        self.mode = "movie"  // 根据API文档，mode应该设置为"movie"
+        self.mode = category.rawValue
         self.visible = 1
         self.keyword = keyword
         self.categories = []
