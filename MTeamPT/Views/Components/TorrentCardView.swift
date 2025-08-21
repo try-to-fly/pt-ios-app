@@ -53,7 +53,7 @@ struct TorrentCardView: View {
                     Image(systemName: "arrow.up.circle")
                         .font(.caption)
                         .foregroundColor(.green)
-                    Text(torrent.status.seeders)
+                    Text(torrent.status.seeders ?? "0")
                         .font(.caption)
                         .foregroundColor(.green)
                 }
@@ -62,7 +62,7 @@ struct TorrentCardView: View {
                     Image(systemName: "arrow.down.circle")
                         .font(.caption)
                         .foregroundColor(.orange)
-                    Text(torrent.status.leechers)
+                    Text(torrent.status.leechers ?? "0")
                         .font(.caption)
                         .foregroundColor(.orange)
                 }
@@ -72,7 +72,7 @@ struct TorrentCardView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "eye")
                         .font(.caption)
-                    Text(torrent.status.views)
+                    Text(torrent.status.views ?? "0")
                         .font(.caption)
                 }
                 .foregroundColor(.secondary)
@@ -80,7 +80,7 @@ struct TorrentCardView: View {
                 HStack(spacing: 4) {
                     Image(systemName: "checkmark.circle")
                         .font(.caption)
-                    Text(torrent.status.timesCompleted)
+                    Text(torrent.status.timesCompleted ?? "0")
                         .font(.caption)
                 }
                 .foregroundColor(.secondary)

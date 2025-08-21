@@ -5,7 +5,7 @@ struct Torrent: Identifiable, Codable, Hashable {
     let createdDate: String
     let lastModifiedDate: String
     let name: String
-    let smallDescr: String
+    let smallDescr: String?
     let imdb: String?
     let imdbRating: String?
     let douban: String?
@@ -23,9 +23,9 @@ struct Torrent: Identifiable, Codable, Hashable {
     let countries: [String]
     let numfiles: String
     let size: String
-    let labels: String
+    let labels: String?
     let labelsNew: [String]
-    let msUp: String
+    let msUp: String?
     let anonymous: Bool
     let infoHash: String?
     let status: TorrentStatus
@@ -56,8 +56,10 @@ struct Torrent: Identifiable, Codable, Hashable {
     }
     
     var healthStatus: HealthStatus {
-        guard let seeders = Int(status.seeders),
-              let _ = Int(status.leechers) else {
+        guard let seedersStr = status.seeders,
+              let leechersStr = status.leechers,
+              let seeders = Int(seedersStr),
+              let _ = Int(leechersStr) else {
             return .unknown
         }
         
@@ -85,22 +87,22 @@ struct TorrentStatus: Codable, Hashable {
     let id: String
     let createdDate: String
     let lastModifiedDate: String
-    let pickType: String
-    let toppingLevel: String
+    let pickType: String?
+    let toppingLevel: String?
     let toppingEndTime: String?
     let discount: String
     let discountEndTime: String?
-    let timesCompleted: String
-    let comments: String
-    let lastAction: String
-    let lastSeederAction: String
-    let views: String
-    let hits: String
-    let support: String
-    let oppose: String
-    let status: String
-    let seeders: String
-    let leechers: String
+    let timesCompleted: String?
+    let comments: String?
+    let lastAction: String?
+    let lastSeederAction: String?
+    let views: String?
+    let hits: String?
+    let support: String?
+    let oppose: String?
+    let status: String?
+    let seeders: String?
+    let leechers: String?
     let banned: Bool
     let visible: Bool
     let promotionRule: String?

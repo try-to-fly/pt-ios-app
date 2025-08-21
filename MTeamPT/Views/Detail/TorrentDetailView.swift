@@ -93,8 +93,8 @@ struct TorrentDetailView: View {
                 .fontWeight(.bold)
                 .foregroundColor(.primary)
             
-            if !torrent.smallDescr.isEmpty {
-                Text(torrent.smallDescr)
+            if let smallDescr = torrent.smallDescr, !smallDescr.isEmpty {
+                Text(smallDescr)
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .lineLimit(3)
@@ -192,28 +192,28 @@ struct TorrentDetailView: View {
         HStack(spacing: 16) {
             StatCard(
                 icon: "arrow.up.circle.fill",
-                value: torrent.status.seeders,
+                value: torrent.status.seeders ?? "0",
                 label: "种子",
                 color: viewModel.seedersColor
             )
             
             StatCard(
                 icon: "arrow.down.circle.fill",
-                value: torrent.status.leechers,
+                value: torrent.status.leechers ?? "0",
                 label: "下载",
                 color: .orange
             )
             
             StatCard(
                 icon: "checkmark.circle.fill",
-                value: torrent.status.timesCompleted,
+                value: torrent.status.timesCompleted ?? "0",
                 label: "完成",
                 color: .green
             )
             
             StatCard(
                 icon: "eye.fill",
-                value: torrent.status.views,
+                value: torrent.status.views ?? "0",
                 label: "浏览",
                 color: .blue
             )
