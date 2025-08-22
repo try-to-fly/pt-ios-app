@@ -6,7 +6,8 @@
       "Bash(sips:*)",
       "Bash(cp:*)",
       "Bash(xcodebuild:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(plutil:*)"
     ],
     "deny": [],
     "ask": []

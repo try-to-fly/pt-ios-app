@@ -11,6 +11,7 @@ class CacheManager {
     private let memoryLimit = 50 * 1024 * 1024
     private let diskLimit = 200 * 1024 * 1024
     private let cacheLifetime: TimeInterval = 300
+    private let maxSearchHistoryCount = 20
     
     private init() {
         cache.countLimit = 100
@@ -154,6 +155,59 @@ class CacheManager {
         
         if totalSize > diskLimit {
             clearCache()
+        }
+    }
+    
+    // MARK: - 搜索历史管理
+    
+    func addSearchHistory(_ keyword: String, category: TorrentCategory) {
+        guard !keyword.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else { return }
+        
+        let newHistory = SearchHistory(keyword: keyword, category: category, timestamp: Date())
+        var histories = getSearchHistories()
+        
+        // 如果已存在相同的搜索记录，移除旧的
+        histories.removeAll { $0 == newHistory }
+        
+        // 添加新记录到开头
+        histories.insert(newHistory, at: 0)
+        
+        // 限制记录数量
+        if histories.count > maxSearchHistoryCount {
+            histories = Array(histories.prefix(maxSearchHistoryCount))
+        }
+        
+        saveSearchHistories(histories)
+    }
+    
+    func getSearchHistories() -> [SearchHistory] {
+        guard let data = UserDefaults.standard.data(forKey: "searchHistory") else {
+            return []
+        }
+        
+        do {
+            return try JSONDecoder().decode([SearchHistory].self, from: data)
+        } catch {
+            return []
+        }
+    }
+    
+    func removeSearchHistory(_ history: SearchHistory) {
+        var histories = getSearchHistories()
+        histories.removeAll { $0.id == history.id }
+        saveSearchHistories(histories)
+    }
+    
+    func clearSearchHistory() {
+        UserDefaults.standard.removeObject(forKey: "searchHistory")
+    }
+    
+    private func saveSearchHistories(_ histories: [SearchHistory]) {
+        do {
+            let data = try JSONEncoder().encode(histories)
+            UserDefaults.standard.set(data, forKey: "searchHistory")
+        } catch {
+            print("保存搜索历史失败: \(error)")
         }
     }
 }

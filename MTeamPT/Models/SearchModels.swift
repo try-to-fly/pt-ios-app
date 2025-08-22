@@ -107,6 +107,45 @@ struct SearchResult {
     }
 }
 
+// 搜索历史记录模型
+struct SearchHistory: Codable, Identifiable, Equatable {
+    let id: UUID
+    let keyword: String
+    let category: TorrentCategory
+    let timestamp: Date
+    
+    init(keyword: String, category: TorrentCategory, timestamp: Date) {
+        self.id = UUID()
+        self.keyword = keyword
+        self.category = category
+        self.timestamp = timestamp
+    }
+    
+    var displayTime: String {
+        let formatter = DateFormatter()
+        let calendar = Calendar.current
+        
+        if calendar.isDateInToday(timestamp) {
+            formatter.dateFormat = "HH:mm"
+            return "今天 \(formatter.string(from: timestamp))"
+        } else if calendar.isDateInYesterday(timestamp) {
+            formatter.dateFormat = "HH:mm"
+            return "昨天 \(formatter.string(from: timestamp))"
+        } else {
+            formatter.dateFormat = "MM-dd HH:mm"
+            return formatter.string(from: timestamp)
+        }
+    }
+    
+    static func == (lhs: SearchHistory, rhs: SearchHistory) -> Bool {
+        return lhs.keyword == rhs.keyword && lhs.category == rhs.category
+    }
+    
+    enum CodingKeys: String, CodingKey {
+        case id, keyword, category, timestamp
+    }
+}
+
 enum SearchError: LocalizedError {
     case invalidAPIKey
     case networkError(String)

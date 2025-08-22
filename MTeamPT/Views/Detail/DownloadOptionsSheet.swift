@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct DownloadOptionsSheet: View {
     let downloadURL: String

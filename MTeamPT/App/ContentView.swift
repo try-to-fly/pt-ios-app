@@ -1,5 +1,6 @@
 import SwiftUI
 import Combine
+import UIKit
 
 @MainActor
 class DownloadsViewModel: ObservableObject {

@@ -4,15 +4,41 @@ struct TorrentCardView: View {
     let torrent: Torrent
     @State private var isPressed = false
     
+    // 格式化数字显示（大于1000显示为1k+格式）
+    private func formatNumber(_ numStr: String) -> String {
+        guard let num = Int(numStr) else { return numStr }
+        if num >= 10000 {
+            return "\(num / 1000)k"
+        } else if num >= 1000 {
+            return String(format: "%.1fk", Double(num) / 1000.0)
+        }
+        return numStr
+    }
+    
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            // 顶部区域：标题和优惠/健康度标志
             HStack(alignment: .top) {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text(torrent.displayTitle)
-                        .font(.system(size: 15, weight: .semibold))
-                        .lineLimit(2)
-                        .foregroundColor(.primary)
+                    // 标题和时间
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(torrent.displayTitle)
+                            .font(.system(size: 15, weight: .semibold))
+                            .lineLimit(2)
+                            .foregroundColor(.primary)
+                        
+                        // 发布时间
+                        HStack(spacing: 4) {
+                            Image(systemName: "clock.fill")
+                                .font(.system(size: 11))
+                                .foregroundColor(torrent.createdTimeColor.opacity(0.8))
+                            Text(torrent.relativeCreatedTime)
+                                .font(.system(size: 12, weight: .medium))
+                                .foregroundColor(torrent.createdTimeColor)
+                        }
+                    }
                     
+                    // 大小和评分
                     HStack(spacing: 12) {
                         HStack(spacing: 4) {
                             Image(systemName: "doc.circle")
@@ -48,57 +74,66 @@ struct TorrentCardView: View {
                 }
             }
             
-            HStack(spacing: 16) {
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.up.circle")
-                        .font(.caption)
-                        .foregroundColor(.green)
-                    Text(torrent.status.seeders ?? "0")
-                        .font(.caption)
-                        .foregroundColor(.green)
-                }
-                
-                HStack(spacing: 4) {
-                    Image(systemName: "arrow.down.circle")
-                        .font(.caption)
-                        .foregroundColor(.orange)
-                    Text(torrent.status.leechers ?? "0")
-                        .font(.caption)
-                        .foregroundColor(.orange)
+            // 底部统计信息区域，添加分隔线
+            Divider()
+                .background(Color.secondary.opacity(0.1))
+            
+            HStack(spacing: 0) {
+                // 上传/下载统计
+                HStack(spacing: 12) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.up.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(.green)
+                        Text(torrent.status.seeders ?? "0")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.green)
+                    }
+                    
+                    HStack(spacing: 4) {
+                        Image(systemName: "arrow.down.circle.fill")
+                            .font(.system(size: 12))
+                            .foregroundColor(.orange)
+                        Text(torrent.status.leechers ?? "0")
+                            .font(.system(size: 12, weight: .medium))
+                            .foregroundColor(.orange)
+                    }
                 }
                 
                 Spacer()
                 
-                HStack(spacing: 4) {
-                    Image(systemName: "eye")
-                        .font(.caption)
-                    Text(torrent.status.views ?? "0")
-                        .font(.caption)
+                // 查看和完成统计
+                HStack(spacing: 12) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "eye.fill")
+                            .font(.system(size: 11))
+                        Text(formatNumber(torrent.status.views ?? "0"))
+                            .font(.system(size: 11))
+                    }
+                    .foregroundColor(.secondary.opacity(0.8))
+                    
+                    HStack(spacing: 4) {
+                        Image(systemName: "checkmark.circle.fill")
+                            .font(.system(size: 11))
+                        Text(formatNumber(torrent.status.timesCompleted ?? "0"))
+                            .font(.system(size: 11))
+                    }
+                    .foregroundColor(.secondary.opacity(0.8))
                 }
-                .foregroundColor(.secondary)
-                
-                HStack(spacing: 4) {
-                    Image(systemName: "checkmark.circle")
-                        .font(.caption)
-                    Text(torrent.status.timesCompleted ?? "0")
-                        .font(.caption)
-                }
-                .foregroundColor(.secondary)
             }
         }
         .padding()
         .background(
             RoundedRectangle(cornerRadius: 16)
                 .fill(Color(.systemBackground))
-                .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
+                .shadow(color: .black.opacity(0.06), radius: 10, x: 0, y: 3)
                 .overlay(
                     RoundedRectangle(cornerRadius: 16)
                         .stroke(
                             LinearGradient(
-                                colors: [
-                                    Color.blue.opacity(0.1),
-                                    Color.purple.opacity(0.1)
-                                ],
+                                colors: torrent.createdDateAsDate?.timeIntervalSinceNow ?? -86400 > -3600 ? 
+                                    [Color.green.opacity(0.2), Color.blue.opacity(0.2)] :
+                                    [Color.blue.opacity(0.1), Color.purple.opacity(0.1)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),

@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 struct DownloadedTorrent: Codable, Identifiable {
     let id: UUID
@@ -134,6 +135,52 @@ struct Torrent: Identifiable, Codable, Hashable {
         }
         return name
     }
+    
+    // 将createdDate字符串转换为Date对象
+    var createdDateAsDate: Date? {
+        // API返回的日期格式通常是 "yyyy-MM-dd HH:mm:ss" 或 ISO 8601
+        let dateFormatter = DateFormatter()
+        dateFormatter.locale = Locale(identifier: "en_US_POSIX")
+        
+        // 尝试多种日期格式
+        let dateFormats = [
+            "yyyy-MM-dd HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm:ss",
+            "yyyy-MM-dd'T'HH:mm:ss.SSS",
+            "yyyy-MM-dd'T'HH:mm:ssZ",
+            "yyyy-MM-dd'T'HH:mm:ss.SSSZ"
+        ]
+        
+        for format in dateFormats {
+            dateFormatter.dateFormat = format
+            if let date = dateFormatter.date(from: createdDate) {
+                return date
+            }
+        }
+        
+        // 如果是时间戳（Unix timestamp）
+        if let timestamp = Double(createdDate) {
+            return Date(timeIntervalSince1970: timestamp)
+        }
+        
+        return nil
+    }
+    
+    // 获取相对时间显示
+    var relativeCreatedTime: String {
+        guard let date = createdDateAsDate else {
+            return "未知时间"
+        }
+        return date.relativeTimeDisplay()
+    }
+    
+    // 获取时间显示的颜色
+    var createdTimeColor: Color {
+        guard let date = createdDateAsDate else {
+            return .secondary
+        }
+        return date.relativeTimeColor()
+    }
 }
 
 struct TorrentStatus: Codable, Hashable {
@@ -245,7 +292,7 @@ enum DiscountType: String {
     }
 }
 
-enum TorrentCategory: String, CaseIterable {
+enum TorrentCategory: String, CaseIterable, Codable {
     case all = "normal"
     case tvshow = "tvshow"
     case movie = "movie"

@@ -161,6 +161,72 @@ extension Date {
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: self, relativeTo: Date())
     }
+    
+    // 精确的相对时间显示
+    func relativeTimeDisplay() -> String {
+        let now = Date()
+        let interval = now.timeIntervalSince(self)
+        
+        // 刚刚（小于1分钟）
+        if interval < 60 {
+            return "刚刚"
+        }
+        
+        // X分钟前（1分钟 - 1小时）
+        if interval < 3600 {
+            let minutes = Int(interval / 60)
+            return "\(minutes)分钟前"
+        }
+        
+        // X小时前（1小时 - 24小时）
+        if interval < 86400 {
+            let hours = Int(interval / 3600)
+            return "\(hours)小时前"
+        }
+        
+        // X天前（1天 - 7天）
+        if interval < 604800 {
+            let days = Int(interval / 86400)
+            return "\(days)天前"
+        }
+        
+        // X周前（1周 - 4周）
+        if interval < 2592000 {
+            let weeks = Int(interval / 604800)
+            return "\(weeks)周前"
+        }
+        
+        // X月前（1月 - 12月）
+        if interval < 31536000 {
+            let months = Int(interval / 2592000)
+            return "\(months)月前"
+        }
+        
+        // X年前
+        let years = Int(interval / 31536000)
+        return "\(years)年前"
+    }
+    
+    // 根据时间间隔返回不同的颜色
+    func relativeTimeColor() -> Color {
+        let now = Date()
+        let interval = now.timeIntervalSince(self)
+        
+        // 小于1小时 - 绿色（新鲜）
+        if interval < 3600 {
+            return .green
+        }
+        // 小于1天 - 蓝色（较新）
+        if interval < 86400 {
+            return .blue
+        }
+        // 小于1周 - 默认颜色
+        if interval < 604800 {
+            return .primary
+        }
+        // 超过1周 - 灰色（较旧）
+        return .secondary
+    }
 }
 
 struct DeviceRotationViewModifier: ViewModifier {

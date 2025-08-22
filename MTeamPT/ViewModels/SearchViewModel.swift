@@ -12,6 +12,7 @@ class SearchViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var showError = false
     @Published var hasMorePages = false
+    @Published var searchHistories: [SearchHistory] = []
     
     private var currentPage = 1
     private let pageSize = 20
@@ -30,6 +31,7 @@ class SearchViewModel: ObservableObject {
     
     init() {
         setupSearchDebounce()
+        loadSearchHistories()
     }
     
     private func setupSearchDebounce() {
@@ -44,6 +46,11 @@ class SearchViewModel: ObservableObject {
     
     func performSearch() {
         search()
+        // 添加搜索历史
+        if !searchText.isEmpty {
+            cacheManager.addSearchHistory(searchText, category: selectedCategory)
+            loadSearchHistories()
+        }
     }
     
     func search() {
@@ -149,5 +156,30 @@ class SearchViewModel: ObservableObject {
         if index >= torrents.count - 3 {
             loadMore()
         }
+    }
+    
+    // MARK: - 搜索历史管理
+    
+    func loadSearchHistories() {
+        searchHistories = cacheManager.getSearchHistories()
+    }
+    
+    func selectSearchHistory(_ history: SearchHistory) {
+        searchText = history.keyword
+        selectedCategory = history.category
+        search()
+        // 更新选中的搜索历史时间戳
+        cacheManager.addSearchHistory(history.keyword, category: history.category)
+        loadSearchHistories()
+    }
+    
+    func removeSearchHistory(_ history: SearchHistory) {
+        cacheManager.removeSearchHistory(history)
+        loadSearchHistories()
+    }
+    
+    func clearSearchHistory() {
+        cacheManager.clearSearchHistory()
+        loadSearchHistories()
     }
 }

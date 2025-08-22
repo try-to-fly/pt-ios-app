@@ -1,5 +1,6 @@
 import Foundation
 import SwiftUI
+import UIKit
 
 @MainActor
 class TorrentDetailViewModel: ObservableObject {
@@ -217,23 +218,5 @@ class TorrentDetailViewModel: ObservableObject {
             errorMessage = "获取下载链接失败，请重试"
         }
         showError = true
-    }
-}
-
-class HapticManager {
-    static let shared = HapticManager()
-    
-    private init() {}
-    
-    func impact(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
-        let generator = UIImpactFeedbackGenerator(style: style)
-        generator.prepare()
-        generator.impactOccurred()
-    }
-    
-    func notification(_ type: UINotificationFeedbackGenerator.FeedbackType) {
-        let generator = UINotificationFeedbackGenerator()
-        generator.prepare()
-        generator.notificationOccurred(type)
     }
 }
