@@ -399,7 +399,7 @@ struct AboutView: View {
                             )
                         )
                     
-                    Text("M-Team PT")
+                    Text("Cat")
                         .font(.title)
                         .fontWeight(.bold)
                     
@@ -412,7 +412,7 @@ struct AboutView: View {
                     Text("关于应用")
                         .font(.headline)
                     
-                    Text("M-Team PT 是一款专为 M-Team 用户设计的移动端应用，提供便捷的种子搜索和下载功能。")
+                    Text("Cat 是一款专为 M-Team 用户设计的移动端应用，提供便捷的种子搜索和下载功能。")
                         .font(.body)
                         .foregroundColor(.secondary)
                 }

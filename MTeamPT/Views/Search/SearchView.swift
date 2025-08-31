@@ -58,7 +58,7 @@ struct SearchView: View {
     private var searchHeader: some View {
         VStack(spacing: 12) {
             HStack {
-                Text("M-Team PT")
+                Text("Cat")
                     .font(.largeTitle)
                     .fontWeight(.bold)
                     .foregroundStyle(

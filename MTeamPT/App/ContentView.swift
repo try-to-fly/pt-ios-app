@@ -282,7 +282,7 @@ struct OnboardingView: View {
                     .shadow(color: .blue.opacity(0.3), radius: 10, x: 0, y: 5)
                 
                 VStack(spacing: 10) {
-                    Text("欢迎使用 M-Team PT")
+                    Text("欢迎使用 Cat")
                         .font(.largeTitle)
                         .fontWeight(.bold)
                     
