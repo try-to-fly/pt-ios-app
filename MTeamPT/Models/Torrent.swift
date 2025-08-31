@@ -61,8 +61,8 @@ struct Torrent: Identifiable, Codable, Hashable {
     let source: String?
     let medium: String?
     let standard: String
-    let videoCodec: String
-    let audioCodec: String
+    let videoCodec: String?
+    let audioCodec: String?
     let team: String?
     let processing: String?
     let countries: [String]

@@ -120,8 +120,8 @@ struct TorrentDetailView: View {
     private var infoSection: some View {
         VStack(spacing: 12) {
             InfoRow(icon: "doc.circle", title: "文件大小", value: torrent.formattedSize)
-            InfoRow(icon: "film", title: "视频编码", value: torrent.videoCodec)
-            InfoRow(icon: "speaker.wave.2", title: "音频编码", value: torrent.audioCodec)
+            InfoRow(icon: "film", title: "视频编码", value: torrent.videoCodec ?? "未知")
+            InfoRow(icon: "speaker.wave.2", title: "音频编码", value: torrent.audioCodec ?? "未知")
             InfoRow(icon: "folder", title: "文件数量", value: torrent.numfiles)
             
             if torrent.countries.count > 0 {
