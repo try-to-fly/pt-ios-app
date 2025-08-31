@@ -167,6 +167,8 @@ class SearchViewModel: ObservableObject {
     func selectSearchHistory(_ history: SearchHistory) {
         searchText = history.keyword
         selectedCategory = history.category
+        // 清空当前结果以显示loading状态
+        torrents = []
         search()
         // 更新选中的搜索历史时间戳
         cacheManager.addSearchHistory(history.keyword, category: history.category)
