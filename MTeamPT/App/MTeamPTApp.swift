@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 @main
 struct MTeamPTApp: App {
@@ -21,6 +22,9 @@ struct MTeamPTApp: App {
         UINavigationBar.appearance().largeTitleTextAttributes = [.foregroundColor: UIColor.label]
         UINavigationBar.appearance().titleTextAttributes = [.foregroundColor: UIColor.label]
         UINavigationBar.appearance().tintColor = UIColor.systemBlue
+        
+        // 修复iPad iOS 15 Button触摸响应问题
+        UIScrollView.appearance().delaysContentTouches = false
     }
 }
 

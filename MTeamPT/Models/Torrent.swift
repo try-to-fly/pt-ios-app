@@ -181,6 +181,164 @@ struct Torrent: Identifiable, Codable, Hashable {
     }
 }
 
+// PromotionRule 可以是字符串或对象，使用枚举来处理
+enum PromotionRule: Codable, Hashable {
+    case string(String)
+    case object([String: AnyCodable])
+    case null
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        
+        // 首先尝试解码为字符串
+        if let stringValue = try? container.decode(String.self) {
+            self = .string(stringValue)
+            return
+        }
+        
+        // 尝试解码为字典
+        if let dictValue = try? container.decode([String: AnyCodable].self) {
+            self = .object(dictValue)
+            return
+        }
+        
+        // 如果是 null
+        if container.decodeNil() {
+            self = .null
+            return
+        }
+        
+        // 如果都不是，抛出错误
+        throw DecodingError.typeMismatch(
+            PromotionRule.self,
+            DecodingError.Context(
+                codingPath: decoder.codingPath,
+                debugDescription: "Expected String, Dictionary or null"
+            )
+        )
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        switch self {
+        case .string(let value):
+            try container.encode(value)
+        case .object(let value):
+            try container.encode(value)
+        case .null:
+            try container.encodeNil()
+        }
+    }
+    
+    // 获取字符串值（如果是字符串类型）
+    var stringValue: String? {
+        switch self {
+        case .string(let value):
+            return value
+        case .object, .null:
+            return nil
+        }
+    }
+}
+
+// AnyCodable 用于处理未知类型的值
+struct AnyCodable: Codable, Hashable {
+    let value: Any
+    
+    init(_ value: Any) {
+        self.value = value
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        
+        if let value = try? container.decode(Bool.self) {
+            self.value = value
+        } else if let value = try? container.decode(Int.self) {
+            self.value = value
+        } else if let value = try? container.decode(Double.self) {
+            self.value = value
+        } else if let value = try? container.decode(String.self) {
+            self.value = value
+        } else if let value = try? container.decode([String: AnyCodable].self) {
+            self.value = value
+        } else if let value = try? container.decode([AnyCodable].self) {
+            self.value = value
+        } else if container.decodeNil() {
+            self.value = NSNull()
+        } else {
+            throw DecodingError.dataCorruptedError(
+                in: container,
+                debugDescription: "Cannot decode value"
+            )
+        }
+    }
+    
+    func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        
+        switch value {
+        case let value as Bool:
+            try container.encode(value)
+        case let value as Int:
+            try container.encode(value)
+        case let value as Double:
+            try container.encode(value)
+        case let value as String:
+            try container.encode(value)
+        case let value as [String: AnyCodable]:
+            try container.encode(value)
+        case let value as [AnyCodable]:
+            try container.encode(value)
+        case is NSNull:
+            try container.encodeNil()
+        default:
+            throw EncodingError.invalidValue(
+                value,
+                EncodingError.Context(
+                    codingPath: encoder.codingPath,
+                    debugDescription: "Cannot encode value"
+                )
+            )
+        }
+    }
+    
+    static func == (lhs: AnyCodable, rhs: AnyCodable) -> Bool {
+        // 简单的相等性比较
+        switch (lhs.value, rhs.value) {
+        case (let l as Bool, let r as Bool):
+            return l == r
+        case (let l as Int, let r as Int):
+            return l == r
+        case (let l as Double, let r as Double):
+            return l == r
+        case (let l as String, let r as String):
+            return l == r
+        case (is NSNull, is NSNull):
+            return true
+        default:
+            return false
+        }
+    }
+    
+    func hash(into hasher: inout Hasher) {
+        switch value {
+        case let value as Bool:
+            hasher.combine(value)
+        case let value as Int:
+            hasher.combine(value)
+        case let value as Double:
+            hasher.combine(value)
+        case let value as String:
+            hasher.combine(value)
+        case is NSNull:
+            hasher.combine(0)
+        default:
+            hasher.combine(0)
+        }
+    }
+}
+
 struct TorrentStatus: Codable, Hashable {
     let id: String
     let createdDate: String
@@ -203,8 +361,52 @@ struct TorrentStatus: Codable, Hashable {
     let leechers: String?
     let banned: Bool
     let visible: Bool
-    let promotionRule: String?
+    let promotionRule: PromotionRule?
     let mallSingleFree: String?
+    
+    // 自定义解码以处理 promotionRule 的特殊情况
+    enum CodingKeys: String, CodingKey {
+        case id, createdDate, lastModifiedDate, pickType, toppingLevel
+        case toppingEndTime, discount, discountEndTime, timesCompleted
+        case comments, lastAction, lastSeederAction, views, hits
+        case support, oppose, status, seeders, leechers
+        case banned, visible, promotionRule, mallSingleFree
+    }
+    
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        id = try container.decode(String.self, forKey: .id)
+        createdDate = try container.decode(String.self, forKey: .createdDate)
+        lastModifiedDate = try container.decode(String.self, forKey: .lastModifiedDate)
+        pickType = try container.decodeIfPresent(String.self, forKey: .pickType)
+        toppingLevel = try container.decodeIfPresent(String.self, forKey: .toppingLevel)
+        toppingEndTime = try container.decodeIfPresent(String.self, forKey: .toppingEndTime)
+        discount = try container.decode(String.self, forKey: .discount)
+        discountEndTime = try container.decodeIfPresent(String.self, forKey: .discountEndTime)
+        timesCompleted = try container.decodeIfPresent(String.self, forKey: .timesCompleted)
+        comments = try container.decodeIfPresent(String.self, forKey: .comments)
+        lastAction = try container.decodeIfPresent(String.self, forKey: .lastAction)
+        lastSeederAction = try container.decodeIfPresent(String.self, forKey: .lastSeederAction)
+        views = try container.decodeIfPresent(String.self, forKey: .views)
+        hits = try container.decodeIfPresent(String.self, forKey: .hits)
+        support = try container.decodeIfPresent(String.self, forKey: .support)
+        oppose = try container.decodeIfPresent(String.self, forKey: .oppose)
+        status = try container.decodeIfPresent(String.self, forKey: .status)
+        seeders = try container.decodeIfPresent(String.self, forKey: .seeders)
+        leechers = try container.decodeIfPresent(String.self, forKey: .leechers)
+        banned = try container.decode(Bool.self, forKey: .banned)
+        visible = try container.decode(Bool.self, forKey: .visible)
+        
+        // 特殊处理 promotionRule
+        if container.contains(.promotionRule) {
+            promotionRule = try container.decodeIfPresent(PromotionRule.self, forKey: .promotionRule)
+        } else {
+            promotionRule = nil
+        }
+        
+        mallSingleFree = try container.decodeIfPresent(String.self, forKey: .mallSingleFree)
+    }
 }
 
 enum HealthStatus {

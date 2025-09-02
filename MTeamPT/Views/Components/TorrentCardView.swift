@@ -16,6 +16,11 @@ struct TorrentCardView: View {
     }
     
     var body: some View {
+        cardContent
+            .contentShape(Rectangle())
+    }
+    
+    private var cardContent: some View {
         VStack(alignment: .leading, spacing: 12) {
             // 顶部区域：标题和优惠/健康度标志
             HStack(alignment: .top) {
@@ -143,14 +148,6 @@ struct TorrentCardView: View {
         )
         .scaleEffect(isPressed ? 0.98 : 1)
         .animation(.spring(response: 0.3, dampingFraction: 0.6), value: isPressed)
-        .onLongPressGesture(
-            minimumDuration: 0.1,
-            maximumDistance: .infinity,
-            pressing: { pressing in
-                isPressed = pressing
-            },
-            perform: { }
-        )
     }
     
     private var labelsView: some View {

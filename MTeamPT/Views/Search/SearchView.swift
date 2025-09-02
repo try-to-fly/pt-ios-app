@@ -41,6 +41,7 @@ struct SearchView: View {
                 Text(viewModel.errorMessage ?? "未知错误")
             }
         }
+        .navigationViewStyle(StackNavigationViewStyle())
     }
     
     private var backgroundGradient: some View {
@@ -138,26 +139,36 @@ struct SearchView: View {
     }
     
     private var torrentList: some View {
-        ScrollView {
-            LazyVStack(spacing: 12) {
-                ForEach(viewModel.torrents) { torrent in
+        List {
+            ForEach(viewModel.torrents) { torrent in
+                Button(action: {
+                    selectedTorrent = torrent
+                    HapticManager.shared.impact(.light)
+                }) {
                     TorrentCardView(torrent: torrent)
-                        .onTapGesture {
-                            selectedTorrent = torrent
-                            HapticManager.shared.impact(.light)
-                        }
-                        .onAppear {
-                            viewModel.torrentAppeared(torrent)
-                        }
+                        .contentShape(Rectangle())
                 }
-                
-                if viewModel.isLoadingMore {
-                    ProgressView()
-                        .padding()
+                .buttonStyle(PlainButtonStyle())
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                .onAppear {
+                    viewModel.torrentAppeared(torrent)
                 }
             }
-            .padding()
+            
+            if viewModel.isLoadingMore {
+                HStack {
+                    Spacer()
+                    ProgressView()
+                    Spacer()
+                }
+                .listRowBackground(Color.clear)
+                .listRowSeparator(.hidden)
+            }
         }
+        .listStyle(PlainListStyle())
+        .background(Color.clear)
         .refreshable {
             viewModel.refresh()
         }
