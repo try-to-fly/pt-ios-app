@@ -15,7 +15,7 @@ struct SearchView: View {
                 VStack(spacing: 0) {
                     searchHeader
                     
-                    if isSearchBarFocused {
+                    if isSearchBarFocused && !viewModel.isLoading {
                         searchHistorySection
                             .transition(.asymmetric(
                                 insertion: .move(edge: .top).combined(with: .opacity),
@@ -82,9 +82,10 @@ struct SearchView: View {
             .padding(.top, 50)
             
             SearchBarView(
-                text: $viewModel.searchText, 
+                text: $viewModel.searchText,
                 placeholder: viewModel.searchPlaceholder,
                 isFocused: $isSearchBarFocused,
+                isLoading: viewModel.isLoading,
                 onSearchSubmit: {
                     viewModel.performSearch()
                     isSearchBarFocused = false
@@ -180,8 +181,9 @@ struct SearchView: View {
                 histories: viewModel.searchHistories,
                 onSelect: { history in
                     withAnimation(.easeInOut(duration: 0.3)) {
-                        viewModel.selectSearchHistory(history)
+                        // 先收起历史面板，再触发搜索，确保显示loading
                         isSearchBarFocused = false
+                        viewModel.selectSearchHistory(history)
                     }
                     HapticManager.shared.impact(.medium)
                 },
@@ -205,7 +207,7 @@ struct SearchView: View {
     }
 }
 
-// 搜索历史视图
+// 搜索历史视图（优化样式）
 struct SearchHistoryView: View {
     let histories: [SearchHistory]
     let onSelect: (SearchHistory) -> Void
@@ -221,7 +223,7 @@ struct SearchHistoryView: View {
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.primary.opacity(0.8))
                     
-                    Text("搜索历史")
+                    Text("最近搜索")
                         .font(.system(size: 18, weight: .semibold))
                         .foregroundColor(.primary)
                 }
@@ -266,13 +268,14 @@ struct SearchHistoryView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 40)
             } else {
-                // 历史记录列表
+                // 历史记录标签网格
+                let columns = [GridItem(.adaptive(minimum: 110), spacing: 8)]
                 ScrollView(.vertical, showsIndicators: false) {
-                    LazyVStack(spacing: 10) {
-                        ForEach(histories.prefix(10)) { history in
-                            SearchHistoryRowView(
+                    LazyVGrid(columns: columns, spacing: 8) {
+                        ForEach(histories.prefix(20)) { history in
+                            HistoryChip(
                                 history: history,
-                                onSelect: { onSelect(history) },
+                                onTap: { onSelect(history) },
                                 onRemove: { onRemove(history) }
                             )
                         }
@@ -280,7 +283,7 @@ struct SearchHistoryView: View {
                     .padding(.horizontal, 16)
                     .padding(.bottom, 16)
                 }
-                .frame(maxHeight: 400)
+                .frame(maxHeight: 420)
             }
         }
         .background(
@@ -292,6 +295,81 @@ struct SearchHistoryView: View {
             RoundedRectangle(cornerRadius: 20)
                 .stroke(Color(.systemGray5), lineWidth: 0.5)
         )
+    }
+}
+
+// 标签样式的历史项
+struct HistoryChip: View {
+    let history: SearchHistory
+    let onTap: () -> Void
+    let onRemove: () -> Void
+    @State private var showDelete = false
+    
+    private var tintColor: Color {
+        switch history.category {
+        case .movie: return .blue
+        case .tvshow: return .purple
+        case .all: return .gray
+        }
+    }
+    
+    var body: some View {
+        Button(action: onTap) {
+            HStack(spacing: 8) {
+                Circle()
+                    .fill(tintColor.opacity(0.15))
+                    .frame(width: 18, height: 18)
+                    .overlay(
+                        Image(systemName: history.category.iconName)
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundColor(tintColor)
+                    )
+                
+                Text(history.keyword)
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundColor(.primary)
+                    .lineLimit(1)
+            }
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(
+                Capsule(style: .continuous)
+                    .fill(Color(.secondarySystemGroupedBackground))
+            )
+            .overlay(
+                Group {
+                    if showDelete {
+                        HStack {
+                            Spacer(minLength: 0)
+                            Button(action: {
+                                withAnimation(.easeOut(duration: 0.2)) {
+                                    onRemove()
+                                    showDelete = false
+                                }
+                            }) {
+                                Image(systemName: "xmark.circle.fill")
+                                    .font(.system(size: 16))
+                                    .foregroundColor(.red.opacity(0.85))
+                            }
+                        }
+                        .padding(.trailing, 6)
+                    }
+                }
+            )
+        }
+        .buttonStyle(PlainButtonStyle())
+        .contextMenu {
+            Button(role: .destructive) {
+                onRemove()
+            } label: {
+                Label("删除记录", systemImage: "trash")
+            }
+        }
+        .onLongPressGesture(minimumDuration: 0.4) {
+            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
+                showDelete.toggle()
+            }
+        }
     }
 }
 
@@ -406,14 +484,23 @@ struct SearchHistoryRowView: View {
 struct SearchBarView: View {
     @Binding var text: String
     let placeholder: String
+    var isFocused: FocusState<Bool>.Binding
+    let isLoading: Bool
     let onSearchSubmit: () -> Void
     let onClear: (() -> Void)?
-    var isFocused: FocusState<Bool>.Binding
     
-    init(text: Binding<String>, placeholder: String, isFocused: FocusState<Bool>.Binding, onSearchSubmit: @escaping () -> Void, onClear: (() -> Void)? = nil) {
+    init(
+        text: Binding<String>,
+        placeholder: String,
+        isFocused: FocusState<Bool>.Binding,
+        isLoading: Bool = false,
+        onSearchSubmit: @escaping () -> Void,
+        onClear: (() -> Void)? = nil
+    ) {
         self._text = text
         self.placeholder = placeholder
         self.isFocused = isFocused
+        self.isLoading = isLoading
         self.onSearchSubmit = onSearchSubmit
         self.onClear = onClear
     }
@@ -431,7 +518,11 @@ struct SearchBarView: View {
                     isFocused.wrappedValue = false
                 }
             
-            if !text.isEmpty {
+            if isLoading {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: .secondary))
+                    .frame(width: 18, height: 18)
+            } else if !text.isEmpty {
                 Button(action: { 
                     text = ""
                     isFocused.wrappedValue = false
