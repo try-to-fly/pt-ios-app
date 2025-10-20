@@ -281,7 +281,7 @@ struct HealthIndicator: View {
         case .excellent:
             return "heart.fill"
         case .good:
-            return "heart.lefthalf.fill"
+            return "heart.circle.fill"
         case .fair:
             return "heart"
         case .poor:
