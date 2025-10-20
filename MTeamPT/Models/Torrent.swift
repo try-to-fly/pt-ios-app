@@ -60,7 +60,7 @@ struct Torrent: Identifiable, Codable, Hashable {
     let category: String
     let source: String?
     let medium: String?
-    let standard: String
+    let standard: String?
     let videoCodec: String?
     let audioCodec: String?
     let team: String?
