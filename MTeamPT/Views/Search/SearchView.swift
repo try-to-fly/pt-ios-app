@@ -15,11 +15,11 @@ struct SearchView: View {
                 VStack(spacing: 0) {
                     searchHeader
                     
-                    if isSearchBarFocused && !viewModel.isLoading {
+                    if viewModel.isLoading && viewModel.torrents.isEmpty {
+                        loadingView
+                    } else if isSearchBarFocused {
                         searchHistorySection
                             .transition(.opacity)
-                    } else if viewModel.isLoading && viewModel.torrents.isEmpty {
-                        loadingView
                     } else if viewModel.isEmpty {
                         emptyView
                     } else {
