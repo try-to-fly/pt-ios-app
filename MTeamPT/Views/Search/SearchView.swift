@@ -17,10 +17,7 @@ struct SearchView: View {
                     
                     if isSearchBarFocused && !viewModel.isLoading {
                         searchHistorySection
-                            .transition(.asymmetric(
-                                insertion: .move(edge: .top).combined(with: .opacity),
-                                removal: .move(edge: .top).combined(with: .opacity)
-                            ))
+                            .transition(.opacity)
                     } else if viewModel.isLoading && viewModel.torrents.isEmpty {
                         loadingView
                     } else if viewModel.isEmpty {
@@ -30,7 +27,7 @@ struct SearchView: View {
                     }
                 }
             }
-            .animation(.easeInOut(duration: 0.3), value: isSearchBarFocused)
+            .animation(.spring(response: 0.35, dampingFraction: 0.85), value: isSearchBarFocused)
             .navigationBarHidden(true)
             .sheet(item: $selectedTorrent) { torrent in
                 TorrentDetailView(torrent: torrent)
@@ -209,135 +206,109 @@ struct SearchView: View {
     }
     
     private var searchHistorySection: some View {
-        ScrollView {
-            SearchHistoryView(
-                histories: viewModel.searchHistories,
-                onSelect: { history in
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        // 先收起历史面板，再触发搜索，确保显示loading
-                        isSearchBarFocused = false
-                        viewModel.selectSearchHistory(history)
-                    }
-                    HapticManager.shared.impact(.medium)
-                },
-                onRemove: { history in
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        viewModel.removeSearchHistory(history)
-                    }
-                    HapticManager.shared.notification(.success)
-                },
-                onClearAll: {
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        viewModel.clearSearchHistory()
-                    }
-                    HapticManager.shared.notification(.warning)
-                }
-            )
-            .padding(.horizontal)
-            .padding(.top)
-        }
-        .background(Color(.systemGroupedBackground))
+        SearchHistoryView(
+            histories: viewModel.searchHistories,
+            onSelect: { history in
+                isSearchBarFocused = false
+                viewModel.selectSearchHistory(history)
+                HapticManager.shared.impact(.medium)
+            },
+            onRemove: { history in
+                viewModel.removeSearchHistory(history)
+                HapticManager.shared.notification(.success)
+            },
+            onClearAll: {
+                viewModel.clearSearchHistory()
+                HapticManager.shared.notification(.warning)
+            }
+        )
     }
 }
 
-// 搜索历史视图（优化样式）
+// 搜索历史视图（列表式布局）
 struct SearchHistoryView: View {
     let histories: [SearchHistory]
     let onSelect: (SearchHistory) -> Void
     let onRemove: (SearchHistory) -> Void
     let onClearAll: () -> Void
-    
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(spacing: 0) {
             // 标题栏
             HStack {
                 HStack(spacing: 8) {
                     Image(systemName: "clock.arrow.circlepath")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundColor(.primary.opacity(0.8))
-                    
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundColor(.secondary)
+
                     Text("最近搜索")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(.primary)
                 }
-                
+
                 Spacer()
-                
+
                 if !histories.isEmpty {
                     Button(action: {
                         onClearAll()
                         HapticManager.shared.impact(.light)
                     }) {
                         Text("清空")
-                            .font(.system(size: 14))
+                            .font(.system(size: 14, weight: .medium))
                             .foregroundColor(.blue)
                     }
                 }
             }
             .padding(.horizontal, 20)
-            .padding(.top, 16)
-            
+            .padding(.vertical, 12)
+
             if histories.isEmpty {
                 // 空状态
-                VStack(spacing: 12) {
-                    Image(systemName: "magnifyingglass.circle")
-                        .font(.system(size: 48))
-                        .foregroundStyle(
-                            LinearGradient(
-                                colors: [.blue.opacity(0.6), .purple.opacity(0.6)],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                        )
-                    
+                VStack(spacing: 16) {
+                    Image(systemName: "clock")
+                        .font(.system(size: 40, weight: .light))
+                        .foregroundColor(.secondary.opacity(0.5))
+
                     Text("暂无搜索记录")
                         .font(.system(size: 15))
                         .foregroundColor(.secondary)
-                    
-                    Text("你的搜索历史将显示在这里")
-                        .font(.system(size: 13))
-                        .foregroundColor(.secondary.opacity(0.8))
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 40)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.vertical, 60)
             } else {
-                // 历史记录标签网格
-                let columns = [GridItem(.adaptive(minimum: 110), spacing: 8)]
-                ScrollView(.vertical, showsIndicators: false) {
-                    LazyVGrid(columns: columns, spacing: 8) {
-                        ForEach(histories.prefix(20)) { history in
-                            HistoryChip(
-                                history: history,
-                                onTap: { onSelect(history) },
-                                onRemove: { onRemove(history) }
-                            )
-                        }
+                // 历史记录列表
+                List {
+                    ForEach(histories.prefix(20)) { history in
+                        HistoryRowView(history: history)
+                            .contentShape(Rectangle())
+                            .onTapGesture {
+                                onSelect(history)
+                            }
+                            .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                                Button(role: .destructive) {
+                                    onRemove(history)
+                                } label: {
+                                    Label("删除", systemImage: "trash")
+                                }
+                            }
+                            .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                            .listRowSeparator(.hidden)
+                            .listRowBackground(Color.clear)
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 16)
                 }
-                .frame(maxHeight: 420)
+                .listStyle(.plain)
+                .background(Color.clear)
             }
         }
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(Color(.systemBackground))
-                .shadow(color: Color.black.opacity(0.08), radius: 20, x: 0, y: 10)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: 20)
-                .stroke(Color(.systemGray5), lineWidth: 0.5)
-        )
+        .background(Color(.systemGroupedBackground))
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
 
-// 标签样式的历史项
-struct HistoryChip: View {
+// 历史记录行视图
+struct HistoryRowView: View {
     let history: SearchHistory
-    let onTap: () -> Void
-    let onRemove: () -> Void
-    @State private var showDelete = false
-    
+
     private var tintColor: Color {
         switch history.category {
         case .movie: return .blue
@@ -345,172 +316,54 @@ struct HistoryChip: View {
         case .all: return .gray
         }
     }
-    
-    var body: some View {
-        Button(action: onTap) {
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(tintColor.opacity(0.15))
-                    .frame(width: 18, height: 18)
-                    .overlay(
-                        Image(systemName: history.category.iconName)
-                            .font(.system(size: 10, weight: .semibold))
-                            .foregroundColor(tintColor)
-                    )
-                
-                Text(history.keyword)
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundColor(.primary)
-                    .lineLimit(1)
-            }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 10)
-            .background(
-                Capsule(style: .continuous)
-                    .fill(Color(.secondarySystemGroupedBackground))
-            )
-            .overlay(
-                Group {
-                    if showDelete {
-                        HStack {
-                            Spacer(minLength: 0)
-                            Button(action: {
-                                withAnimation(.easeOut(duration: 0.2)) {
-                                    onRemove()
-                                    showDelete = false
-                                }
-                            }) {
-                                Image(systemName: "xmark.circle.fill")
-                                    .font(.system(size: 16))
-                                    .foregroundColor(.red.opacity(0.85))
-                            }
-                        }
-                        .padding(.trailing, 6)
-                    }
-                }
-            )
-        }
-        .buttonStyle(PlainButtonStyle())
-        .contextMenu {
-            Button(role: .destructive) {
-                onRemove()
-            } label: {
-                Label("删除记录", systemImage: "trash")
-            }
-        }
-        .onLongPressGesture(minimumDuration: 0.4) {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.8)) {
-                showDelete.toggle()
-            }
-        }
-    }
-}
 
-struct SearchHistoryRowView: View {
-    let history: SearchHistory
-    let onSelect: () -> Void
-    let onRemove: () -> Void
-    @State private var isPressed = false
-    @State private var showDeleteButton = false
-    
     var body: some View {
-        HStack(spacing: 14) {
-            // 分类图标容器
-            ZStack {
-                Circle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                history.category == .movie ? Color.blue.opacity(0.1) : 
-                                history.category == .tvshow ? Color.purple.opacity(0.1) : 
-                                Color.gray.opacity(0.1)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(width: 36, height: 36)
-                
-                Image(systemName: history.category.iconName)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundColor(
-                        history.category == .movie ? .blue : 
-                        history.category == .tvshow ? .purple : 
-                        .gray
-                    )
-            }
-            
-            VStack(alignment: .leading, spacing: 4) {
+        HStack(spacing: 12) {
+            // 分类图标
+            Circle()
+                .fill(tintColor.opacity(0.12))
+                .frame(width: 36, height: 36)
+                .overlay(
+                    Image(systemName: history.category.iconName)
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundColor(tintColor)
+                )
+
+            // 关键词和分类/时间
+            VStack(alignment: .leading, spacing: 3) {
                 Text(history.keyword)
                     .font(.system(size: 15, weight: .medium))
                     .foregroundColor(.primary)
                     .lineLimit(1)
-                
+
                 HStack(spacing: 6) {
-                    Label(history.category.displayName, systemImage: "tag.fill")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary.opacity(0.8))
-                    
+                    Text(history.category.displayName)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
+
                     Text("·")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary.opacity(0.6))
-                    
-                    Label(history.displayTime, systemImage: "clock")
-                        .font(.system(size: 11))
-                        .foregroundColor(.secondary.opacity(0.8))
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary.opacity(0.5))
+
+                    Text(history.displayTime)
+                        .font(.system(size: 12))
+                        .foregroundColor(.secondary)
                 }
-                .labelStyle(.titleOnly)
             }
-            
+
             Spacer()
-            
-            // 删除按钮
-            if showDeleteButton {
-                Button(action: {
-                    withAnimation(.easeOut(duration: 0.2)) {
-                        onRemove()
-                        HapticManager.shared.impact(.light)
-                    }
-                }) {
-                    Image(systemName: "minus.circle.fill")
-                        .font(.system(size: 20))
-                        .foregroundColor(.red.opacity(0.8))
-                }
-                .transition(.scale.combined(with: .opacity))
-            }
+
+            // 箭头指示
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .medium))
+                .foregroundColor(.secondary.opacity(0.4))
         }
         .padding(.horizontal, 14)
-        .padding(.vertical, 12)
+        .padding(.vertical, 10)
         .background(
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: 12)
                 .fill(Color(.secondarySystemGroupedBackground))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14)
-                        .stroke(
-                            showDeleteButton ? Color.red.opacity(0.2) : Color.clear,
-                            lineWidth: 1
-                        )
-                )
         )
-        .scaleEffect(isPressed ? 0.97 : 1.0)
-        .onTapGesture {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                isPressed = true
-            }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-                isPressed = false
-                onSelect()
-                HapticManager.shared.impact(.light)
-            }
-        }
-        .onLongPressGesture(minimumDuration: 0.5) {
-            withAnimation(.spring(response: 0.3, dampingFraction: 0.7)) {
-                showDeleteButton.toggle()
-            }
-            HapticManager.shared.impact(.medium)
-        }
-        .animation(.spring(response: 0.3, dampingFraction: 0.8), value: showDeleteButton)
-        .animation(.spring(response: 0.2, dampingFraction: 0.8), value: isPressed)
     }
 }
 
