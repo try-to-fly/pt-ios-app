@@ -40,6 +40,32 @@ struct SearchView: View {
             } message: {
                 Text(viewModel.errorMessage ?? "未知错误")
             }
+            // 过大警告弹窗
+            .overlay(
+                Group {
+                    if viewModel.showOversizeWarning, let torrent = viewModel.oversizeWarningTorrent {
+                        Color.black.opacity(0.4)
+                            .ignoresSafeArea()
+                            .onTapGesture {
+                                viewModel.cancelOversizeDownload()
+                            }
+
+                        OversizeWarningAlert(
+                            torrent: torrent,
+                            onConfirm: {
+                                viewModel.confirmOversizeDownload()
+                                selectedTorrent = torrent
+                                HapticManager.shared.impact(.light)
+                            },
+                            onCancel: {
+                                viewModel.cancelOversizeDownload()
+                            }
+                        )
+                        .transition(.scale.combined(with: .opacity))
+                    }
+                }
+                .animation(.spring(response: 0.3, dampingFraction: 0.8), value: viewModel.showOversizeWarning)
+            )
         }
         .navigationViewStyle(StackNavigationViewStyle())
     }
@@ -69,9 +95,12 @@ struct SearchView: View {
                             endPoint: .trailing
                         )
                     )
-                
+
                 Spacer()
-                
+
+                // 排序选择器
+                SortOptionPicker(selectedOption: $viewModel.sortOption)
+
                 Button(action: { showFilters.toggle() }) {
                     Image(systemName: "line.3.horizontal.decrease.circle")
                         .font(.title2)
@@ -141,10 +170,14 @@ struct SearchView: View {
     
     private var torrentList: some View {
         List {
-            ForEach(viewModel.torrents) { torrent in
+            ForEach(viewModel.sortedTorrents) { torrent in
                 Button(action: {
-                    selectedTorrent = torrent
-                    HapticManager.shared.impact(.light)
+                    viewModel.selectTorrent(torrent) { shouldOpen in
+                        if shouldOpen {
+                            selectedTorrent = torrent
+                            HapticManager.shared.impact(.light)
+                        }
+                    }
                 }) {
                     TorrentCardView(torrent: torrent)
                         .contentShape(Rectangle())
@@ -157,7 +190,7 @@ struct SearchView: View {
                     viewModel.torrentAppeared(torrent)
                 }
             }
-            
+
             if viewModel.isLoadingMore {
                 HStack {
                     Spacer()

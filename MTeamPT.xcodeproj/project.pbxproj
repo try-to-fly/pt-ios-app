@@ -25,6 +25,11 @@
 		B1C2D3FC1234567890123472 /* ErrorHandler.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3FB1234567890123472 /* ErrorHandler.swift */; };
 		B1C2D3FE1234567890123473 /* ToastManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3FD1234567890123473 /* ToastManager.swift */; };
 		B1C2D4001234567890123474 /* View+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1C2D3FF1234567890123474 /* View+Extensions.swift */; };
+		C1D2E3F11234567890123501 /* Resolution.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F01234567890123501 /* Resolution.swift */; };
+		C1D2E3F31234567890123502 /* TorrentSorting.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F21234567890123502 /* TorrentSorting.swift */; };
+		C1D2E3F51234567890123503 /* SortingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F41234567890123503 /* SortingManager.swift */; };
+		C1D2E3F71234567890123504 /* SortOptionPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F61234567890123504 /* SortOptionPicker.swift */; };
+		C1D2E3F91234567890123505 /* OversizeWarningAlert.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1D2E3F81234567890123505 /* OversizeWarningAlert.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -48,6 +53,11 @@
 		B1C2D3FB1234567890123472 /* ErrorHandler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ErrorHandler.swift; sourceTree = "<group>"; };
 		B1C2D3FD1234567890123473 /* ToastManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ToastManager.swift; sourceTree = "<group>"; };
 		B1C2D3FF1234567890123474 /* View+Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "View+Extensions.swift"; sourceTree = "<group>"; };
+		C1D2E3F01234567890123501 /* Resolution.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Resolution.swift; sourceTree = "<group>"; };
+		C1D2E3F21234567890123502 /* TorrentSorting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TorrentSorting.swift; sourceTree = "<group>"; };
+		C1D2E3F41234567890123503 /* SortingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortingManager.swift; sourceTree = "<group>"; };
+		C1D2E3F61234567890123504 /* SortOptionPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SortOptionPicker.swift; sourceTree = "<group>"; };
+		C1D2E3F81234567890123505 /* OversizeWarningAlert.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OversizeWarningAlert.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -107,6 +117,8 @@
 			children = (
 				B1C2D3E31234567890123460 /* Torrent.swift */,
 				B1C2D3E51234567890123461 /* SearchModels.swift */,
+				C1D2E3F01234567890123501 /* Resolution.swift */,
+				C1D2E3F21234567890123502 /* TorrentSorting.swift */,
 			);
 			path = Models;
 			sourceTree = "<group>";
@@ -146,6 +158,7 @@
 			children = (
 				B1C2D3FB1234567890123472 /* ErrorHandler.swift */,
 				B1C2D3FD1234567890123473 /* ToastManager.swift */,
+				C1D2E3F41234567890123503 /* SortingManager.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -195,6 +208,8 @@
 			isa = PBXGroup;
 			children = (
 				B1C2D3F31234567890123468 /* TorrentCardView.swift */,
+				C1D2E3F61234567890123504 /* SortOptionPicker.swift */,
+				C1D2E3F81234567890123505 /* OversizeWarningAlert.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -285,6 +300,11 @@
 				B1C2D3FC1234567890123472 /* ErrorHandler.swift in Sources */,
 				B1C2D3FE1234567890123473 /* ToastManager.swift in Sources */,
 				B1C2D4001234567890123474 /* View+Extensions.swift in Sources */,
+				C1D2E3F11234567890123501 /* Resolution.swift in Sources */,
+				C1D2E3F31234567890123502 /* TorrentSorting.swift in Sources */,
+				C1D2E3F51234567890123503 /* SortingManager.swift in Sources */,
+				C1D2E3F71234567890123504 /* SortOptionPicker.swift in Sources */,
+				C1D2E3F91234567890123505 /* OversizeWarningAlert.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

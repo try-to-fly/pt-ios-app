@@ -13,6 +13,19 @@ class SearchViewModel: ObservableObject {
     @Published var showError = false
     @Published var hasMorePages = false
     @Published var searchHistories: [SearchHistory] = []
+
+    // MARK: - 排序相关属性
+    @Published var sortOption: SortOption = .recommended
+    @Published var showOversizeWarning = false
+    @Published var oversizeWarningTorrent: Torrent?
+    private var pendingOversizeCompletion: ((Bool) -> Void)?
+
+    private let sortingManager = SortingManager.shared
+
+    /// 排序后的种子列表
+    var sortedTorrents: [Torrent] {
+        sortingManager.sortTorrents(torrents, by: sortOption)
+    }
     
     private var currentPage = 1
     private let pageSize = 20
@@ -183,5 +196,34 @@ class SearchViewModel: ObservableObject {
     func clearSearchHistory() {
         cacheManager.clearSearchHistory()
         loadSearchHistories()
+    }
+
+    // MARK: - 过大资源选择确认
+
+    /// 选择种子时检查是否过大
+    func selectTorrent(_ torrent: Torrent, completion: @escaping (Bool) -> Void) {
+        if torrent.isOversized {
+            oversizeWarningTorrent = torrent
+            pendingOversizeCompletion = completion
+            showOversizeWarning = true
+        } else {
+            completion(true)
+        }
+    }
+
+    /// 用户确认下载过大资源
+    func confirmOversizeDownload() {
+        showOversizeWarning = false
+        pendingOversizeCompletion?(true)
+        pendingOversizeCompletion = nil
+        oversizeWarningTorrent = nil
+    }
+
+    /// 用户取消下载过大资源
+    func cancelOversizeDownload() {
+        showOversizeWarning = false
+        pendingOversizeCompletion?(false)
+        pendingOversizeCompletion = nil
+        oversizeWarningTorrent = nil
     }
 }

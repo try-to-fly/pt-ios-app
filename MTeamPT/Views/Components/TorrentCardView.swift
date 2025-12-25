@@ -66,6 +66,9 @@ struct TorrentCardView: View {
                     }
                     
                     labelsView
+
+                    // 推荐/过大标签
+                    recommendationBadge
                 }
                 
                 Spacer()
@@ -156,7 +159,7 @@ struct TorrentCardView: View {
                 ForEach(torrent.labelsNew.prefix(5), id: \.self) { label in
                     LabelChip(text: label)
                 }
-                
+
                 if torrent.labelsNew.count > 5 {
                     Text("+\(torrent.labelsNew.count - 5)")
                         .font(.caption2)
@@ -169,6 +172,41 @@ struct TorrentCardView: View {
                         )
                 }
             }
+        }
+    }
+
+    @ViewBuilder
+    private var recommendationBadge: some View {
+        if torrent.isRecommended {
+            HStack(spacing: 4) {
+                Image(systemName: "hand.thumbsup.fill")
+                    .font(.caption2)
+                Text("推荐")
+                    .font(.caption2)
+                    .fontWeight(.medium)
+            }
+            .foregroundColor(.green)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(Color.green.opacity(0.15))
+            )
+        } else if torrent.isOversized {
+            HStack(spacing: 4) {
+                Image(systemName: "exclamationmark.circle.fill")
+                    .font(.caption2)
+                Text("较大")
+                    .font(.caption2)
+                    .fontWeight(.medium)
+            }
+            .foregroundColor(.orange)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 4)
+            .background(
+                Capsule()
+                    .fill(Color.orange.opacity(0.15))
+            )
         }
     }
 }
